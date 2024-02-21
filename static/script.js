@@ -8,8 +8,8 @@ async function loadFiles() {
     const response = await fetch('/nodes/random/2');
     const data = await response.json();
 
-    window.nodes = data;
-
+    document.getElementById('file1').data = data.nodes[0];
+    document.getElementById('file2').data = data.nodes[1];
     document.getElementById('file1').textContent = data.nodes[0].text;
     document.getElementById('file2').textContent = data.nodes[1].text;
 }
@@ -31,18 +31,41 @@ function setupFormSubmission() {
             return;
         }
 
-        const annotationId = generateUUID();
-        // Assuming you have an endpoint to handle this data
-        const response = await fetch('/submit_annotation', {
+        let file1 = document.getElementById('file1');
+        let file2 = document.getElementById('file2');
+
+        const annotationNode = {
+            id: generateUUID(),
+            name: `similarity_annotation`,
+            timestamp: Date.now(),
+            origin: "link_annotator",
+            text: inputText,
+        };
+
+        const annotationLink1 = {
+            source: annotationNode.id,
+            target: file1.data.id
+        };
+
+        const annotationLink2 = {
+            source: annotationNode.id,
+            target: file2.data.id,
+        };
+
+        const annotatedSimilarity = {
+            source: file1.data.id,
+            target: file2.data.id,
+            human_similarity: parseFloat(similarity),
+        };
+
+        const response = await fetch('/annotate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                annotationId,
-                text: inputText,
-                similarity,
-                files: [window.file1.id, window.file2.id]
+                annotation_node: annotationNode,
+                annotation_links: [annotationLink1, annotationLink2, annotatedSimilarity],
             }),
         });
 
